@@ -1,5 +1,7 @@
 # RouterWatch
 
+fully vibecoded tbo
+
 **English** | [Русский](README.ru.md)
 
 TUI network traffic monitor that maps requests to devices on the local network.
