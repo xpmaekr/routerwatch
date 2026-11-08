@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ "$(id -u)" -ne 0 ]; then
+    exec sudo -E env PATH="$PATH" TERM="${TERM:-xterm-256color}" python3 "$DIR/main.py" "$@"
+fi
+exec python3 "$DIR/main.py" "$@"
