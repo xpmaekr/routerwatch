@@ -1,37 +1,39 @@
 # RouterWatch
 
-TUI-монитор сетевого трафика с привязкой запросов к устройствам локальной сети.
-Показывает, кто и что запрашивает: домены, HTTPS/HTTP, DNS и имена устройств.
+**English** | [Русский](README.ru.md)
+
+TUI network traffic monitor that maps requests to devices on the local network.
+It shows who requests what: domains, HTTPS/HTTP, DNS and device names.
 
 ```
- Время    Устройство   Тип    Запрос                        Размер
+ Time     Device       Type   Request                       Size
  12:04:11 test-pc      HTTPS  https://github.com           1.2 KB
  12:04:12 phone        DNS    https://api.telegram.org      42 B
  12:04:13 tv           HTTP   http://192.168.1.1/admin      8.4 KB
 ```
 
-## Возможности
+## Features
 
-- Выбор языка при первом запуске (RU/EN), настройки запоминаются.
-- Настройка IP роутера, логина, пароля и сетевого интерфейса.
-- Таблица запросов: время, устройство, тип, читаемый URL, размер.
-- Имена устройств из DHCP-таблицы роутера, DHCP и mDNS.
-- Понятные названия: `iPhone 15 Pro`, `Pixel 10a`, `Galaxy S23`, а для устройств
-  без имени — бренд по MAC (OUI): `Apple`, `Samsung`, `Xiaomi` и т.п.
-- Пассивный захват без вмешательства в сеть (по умолчанию).
-- Опциональный MITM-режим для трафика других устройств.
+- Language selection on first launch (RU/EN); settings are remembered.
+- Configure router IP, login, password and network interface.
+- Request table: time, device, type, readable URL, size.
+- Device names from the router's DHCP table, DHCP and mDNS.
+- Friendly names: `iPhone 15 Pro`, `Pixel 10a`, `Galaxy S23`; for unnamed devices
+  it falls back to the vendor by MAC (OUI): `Apple`, `Samsung`, `Xiaomi`, etc.
+- Passive capture without interfering with the network (default).
+- Optional MITM mode for traffic from other devices.
 
-## Требования
+## Requirements
 
-- Linux, права root (raw-сокеты `AF_PACKET`).
-- Python 3.11+ (проверено на 3.14).
+- Linux, root privileges (raw `AF_PACKET` sockets).
+- Python 3.11+ (tested on 3.14).
 - Textual 8.x.
-- `openssl` для md5-crypt (есть встроенный fallback).
+- `openssl` for md5-crypt (a built-in fallback is included).
 
-## Установка
+## Installation
 
 ```bash
-git clone <ваш-репозиторий> routerwatch
+git clone https://github.com/xpmaekr/routerwatch.git
 cd routerwatch
 python3 -m pip install --user -r requirements.txt
 chmod +x routerwatch
@@ -43,62 +45,79 @@ Arch/CachyOS:
 sudo pacman -S python-textual openssl
 ```
 
-## Запуск
+## Usage
 
 ```bash
 ./routerwatch
 ```
 
-Лаунчер сам запросит sudo. Либо явно:
+The launcher requests sudo itself. Or run it explicitly:
 
 ```bash
 sudo ./routerwatch
 ```
 
-При первом запуске выберите язык и заполните:
+On first launch, pick a language and fill in:
 
-- **IP роутера** — подставляется из маршрута по умолчанию.
-- **Логин/пароль** — от веб-админки роутера (для списка DHCP-клиентов).
-- **Интерфейс** — обычно определяется автоматически.
-- **Перехватывать всю сеть (MITM)** — выключено по умолчанию.
-- **Читать DHCP-таблицу роутера** — выключено по умолчанию; даёт имена всех
-  устройств, но на некоторых прошивках Realtek страница `/dhcptbl.asp` может
-  подвесить веб-интерфейс роутера.
+- **Router IP** — prefilled from the default route.
+- **Login/password** — for the router's web admin (used for the DHCP client list).
+- **Interface** — usually detected automatically.
+- **Capture the whole network (MITM)** — off by default.
+- **Read the router's DHCP table** — off by default; it provides names for all
+  devices, but on some Realtek firmware the `/dhcptbl.asp` page can hang the
+  router's web interface.
 
-Нажмите **Старт**. Кнопка **Устройства** показывает найденные имена/IP/MAC.
+Press **Start**. The **Devices** button shows discovered names/IP/MAC.
 
-## Как это работает
+## How it works
 
-- `AF_PACKET` слушает интерфейс и разбирает Ethernet/IP/TCP/UDP.
-- DNS — имена из запросов; TLS — SNI из ClientHello; HTTP — заголовок `Host`.
-- DHCP и mDNS дают имена устройств, ARP — соответствие IP↔MAC.
-- `device_names.py` приводит hostname к виду `iPhone 15`, `Pixel 10a` и подставляет
-  бренд по префиксу MAC. База OUI читается из `/usr/share/hwdata/oui.txt`
-  (или `/usr/share/ieee-data/oui.txt`), есть встроенный запасной список.
-- Для полного списка устройств можно включить вход в админку Realtek Boa
-  и парсинг страницы DHCP-клиентов (опция выключена по умолчанию).
-- MITM: ARP-спуфинг шлюза и хостов, включение `ip_forward`. При остановке
-  ARP-таблицы и `ip_forward` восстанавливаются.
+- `AF_PACKET` listens on the interface and parses Ethernet/IP/TCP/UDP.
+- DNS — names from queries; TLS — SNI from ClientHello; HTTP — the `Host` header.
+- DHCP and mDNS provide device names, ARP provides IP↔MAC mappings.
+- `device_names.py` normalizes hostnames to `iPhone 15`, `Pixel 10a` and adds the
+  vendor by MAC prefix. The OUI database is read from `/usr/share/hwdata/oui.txt`
+  (or `/usr/share/ieee-data/oui.txt`), with a built-in fallback list.
+- For a complete device list, enable login to the Realtek Boa admin and parsing
+  of the DHCP clients page (disabled by default).
+- MITM: ARP spoofing of the gateway and hosts, enabling `ip_forward`. On stop,
+  the ARP tables and `ip_forward` are restored.
 
-## Ограничения
+## Project layout
 
-- HTTPS не раскрывает путь и содержимое — только домен.
-- Бытовые роутеры не предоставляют лог каждого запроса; используется сниффер.
-- В MITM-режиме на Wi-Fi точка доступа может не пропускать трафик между
-  клиентами. Надёжнее Ethernet.
-- Не выключайте программу через `kill -9` в MITM-режиме: ARP-записи живут
-  несколько минут. Используйте кнопку **Стоп** или **Выход**.
-- На некоторых прошивках Realtek GET `/dhcptbl.asp` подвешивает веб-сервер
-  роутера (ping при этом работает). Поэтому чтение DHCP-таблицы выключено по
-  умолчанию; если включили и роутер завис — перезагрузите его по питанию.
+- `app.py` — Textual UI: language, setup, dashboard and devices screens.
+- `sniffer.py` — passive `AF_PACKET` sniffer: DNS, TLS SNI, HTTP Host, DHCP,
+  mDNS, ARP.
+- `router_client.py` — Realtek Boa login and DHCP client parsing.
+- `config.py` — config and automatic gateway/interface/network/MAC detection.
+- `device_names.py` — hostname normalization and vendor lookup by MAC (OUI).
+- `i18n.py` — RU/EN interface strings.
+- `tests/` — unittest: packet parsing, md5-crypt, UI via Textual pilot.
 
-## Приватность и закон
+## Tests
 
-Инструмент предназначен для анализа **своей** сети. Запускайте его только там,
-где у вас есть на это право. Пароль роутера хранится локально в
-`~/.config/routerwatch/config.json` с правами `0600` и никуда не отправляется,
-кроме самого роутера. Телеметрии нет.
+```bash
+python3 -m unittest discover -s tests -v
+```
 
-## Лицензия
+## Limitations
+
+- HTTPS does not reveal the path or content — only the domain.
+- Home routers do not provide a per-request log; a sniffer is used instead.
+- In MITM mode, a Wi-Fi access point may block client-to-client traffic.
+  Ethernet is more reliable.
+- Do not stop the program with `kill -9` in MITM mode: ARP entries persist for
+  several minutes. Use the **Stop** or **Exit** button.
+- On some Realtek firmware, GET `/dhcptbl.asp` hangs the router's web server
+  (ping keeps working). That is why reading the DHCP table is disabled by
+  default; if you enabled it and the router hung, power-cycle it.
+
+## Privacy and legal
+
+The tool is intended for analyzing **your own** network. Run it only where you
+have the right to do so. The router password is stored locally in
+`~/.config/routerwatch/config.json` with `0600` permissions and is never sent
+anywhere except to the router itself. There is no telemetry.
+
+## License
 
 MIT.
